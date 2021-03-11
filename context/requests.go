@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	fbauth "firebase.google.com/go/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -82,8 +83,8 @@ func WorkspaceFromContext(ctx context.Context) (string, error) {
 func SubscriptionFromContext(ctx context.Context) (string, error) {
 	iface := ctx.Value(ContextKeySubscription)
 	if iface != nil {
-		if ws, ok := iface.(string); ok {
-			return ws, nil
+		if sub, ok := iface.(string); ok {
+			return sub, nil
 		}
 	}
 	return "", status.Error(codes.NotFound, "unable to determine subscription for request")
@@ -92,8 +93,8 @@ func SubscriptionFromContext(ctx context.Context) (string, error) {
 func UserFromContext(ctx context.Context) (string, error) {
 	iface := ctx.Value(ContextKeyUser)
 	if iface != nil {
-		if ws, ok := iface.(string); ok {
-			return ws, nil
+		if user, ok := iface.(string); ok {
+			return user, nil
 		}
 	}
 	return "", status.Error(codes.NotFound, "unable to determine user for request")
@@ -102,9 +103,19 @@ func UserFromContext(ctx context.Context) (string, error) {
 func ProcedureFromContext(ctx context.Context) (string, error) {
 	iface := ctx.Value(ContextKeyProcedure)
 	if iface != nil {
-		if ws, ok := iface.(string); ok {
-			return ws, nil
+		if procedure, ok := iface.(string); ok {
+			return procedure, nil
 		}
 	}
 	return "", status.Error(codes.NotFound, "unable to determine procedure for request")
+}
+
+func AuthTokenFromContext(ctx context.Context) (*fbauth.Token, error) {
+	iface := ctx.Value(ContextKeyToken)
+	if iface != nil {
+		if token, ok := iface.(*fbauth.Token); ok {
+			return token, nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "unable to determine token for request")
 }
