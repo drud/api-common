@@ -13,38 +13,12 @@ cloud.google.com/go/firestore/apiv1
 ## explicit
 firebase.google.com/go/auth
 firebase.google.com/go/internal
-# github.com/bsm/redislock v0.7.0
-## explicit
-github.com/bsm/redislock
-# github.com/cespare/xxhash/v2 v2.1.1
-github.com/cespare/xxhash/v2
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
-github.com/dgryski/go-rendezvous
-# github.com/drud/admin-api v0.7.2-0.20210303201949-c2187da82793
-github.com/drud/admin-api/gen/live/administration/v1alpha1
-# github.com/drud/billing-api v0.0.0-20210305152904-3061ed818d39
-## explicit
-github.com/drud/billing-api/gen/live/billing/v1alpha1
-# github.com/drud/ddev-apis-go v0.0.0-20210311203357-c09d2c799f3f
-## explicit
-github.com/drud/ddev-apis-go/live/administration/v1alpha1
-# github.com/drud/org-operator v0.0.12
-## explicit
-github.com/drud/org-operator/pkg/apis/orgs/v1beta1
 # github.com/evanphx/json-patch v4.5.0+incompatible
 github.com/evanphx/json-patch
-# github.com/go-redis/redis/v8 v8.7.1
+# github.com/go-logr/zapr v0.1.1
 ## explicit
-github.com/go-redis/redis/v8
-github.com/go-redis/redis/v8/internal
-github.com/go-redis/redis/v8/internal/hashtag
-github.com/go-redis/redis/v8/internal/hscan
-github.com/go-redis/redis/v8/internal/pool
-github.com/go-redis/redis/v8/internal/proto
-github.com/go-redis/redis/v8/internal/rand
-github.com/go-redis/redis/v8/internal/util
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
@@ -73,100 +47,32 @@ github.com/googleapis/gax-go/v2
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
-# github.com/gorilla/mux v1.8.0
+# github.com/imdario/mergo v0.3.11
 ## explicit
-github.com/gorilla/mux
 # github.com/json-iterator/go v1.1.10
+## explicit
 github.com/json-iterator/go
 # github.com/jstemmer/go-junit-report v0.9.1
 github.com/jstemmer/go-junit-report
 github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
+# github.com/kr/pretty v0.2.0
+## explicit
+# github.com/kr/text v0.2.0
+## explicit
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
-# github.com/pkg/errors v0.9.1
-github.com/pkg/errors
-# github.com/stripe/stripe-go v70.15.0+incompatible
+# github.com/onsi/ginkgo v1.15.0
 ## explicit
-github.com/stripe/stripe-go
-github.com/stripe/stripe-go/account
-github.com/stripe/stripe-go/accountlink
-github.com/stripe/stripe-go/applepaydomain
-github.com/stripe/stripe-go/balance
-github.com/stripe/stripe-go/balancetransaction
-github.com/stripe/stripe-go/bankaccount
-github.com/stripe/stripe-go/bitcoinreceiver
-github.com/stripe/stripe-go/bitcointransaction
-github.com/stripe/stripe-go/capability
-github.com/stripe/stripe-go/card
-github.com/stripe/stripe-go/charge
-github.com/stripe/stripe-go/checkout/session
-github.com/stripe/stripe-go/client
-github.com/stripe/stripe-go/countryspec
-github.com/stripe/stripe-go/coupon
-github.com/stripe/stripe-go/creditnote
-github.com/stripe/stripe-go/customer
-github.com/stripe/stripe-go/customerbalancetransaction
-github.com/stripe/stripe-go/discount
-github.com/stripe/stripe-go/dispute
-github.com/stripe/stripe-go/ephemeralkey
-github.com/stripe/stripe-go/event
-github.com/stripe/stripe-go/exchangerate
-github.com/stripe/stripe-go/fee
-github.com/stripe/stripe-go/feerefund
-github.com/stripe/stripe-go/file
-github.com/stripe/stripe-go/filelink
-github.com/stripe/stripe-go/form
-github.com/stripe/stripe-go/invoice
-github.com/stripe/stripe-go/invoiceitem
-github.com/stripe/stripe-go/issuing/authorization
-github.com/stripe/stripe-go/issuing/card
-github.com/stripe/stripe-go/issuing/cardholder
-github.com/stripe/stripe-go/issuing/dispute
-github.com/stripe/stripe-go/issuing/transaction
-github.com/stripe/stripe-go/loginlink
-github.com/stripe/stripe-go/mandate
-github.com/stripe/stripe-go/oauth
-github.com/stripe/stripe-go/order
-github.com/stripe/stripe-go/orderreturn
-github.com/stripe/stripe-go/paymentintent
-github.com/stripe/stripe-go/paymentmethod
-github.com/stripe/stripe-go/paymentsource
-github.com/stripe/stripe-go/payout
-github.com/stripe/stripe-go/person
-github.com/stripe/stripe-go/plan
-github.com/stripe/stripe-go/product
-github.com/stripe/stripe-go/radar/earlyfraudwarning
-github.com/stripe/stripe-go/radar/valuelist
-github.com/stripe/stripe-go/radar/valuelistitem
-github.com/stripe/stripe-go/recipient
-github.com/stripe/stripe-go/refund
-github.com/stripe/stripe-go/reporting/reportrun
-github.com/stripe/stripe-go/reporting/reporttype
-github.com/stripe/stripe-go/reversal
-github.com/stripe/stripe-go/review
-github.com/stripe/stripe-go/setupintent
-github.com/stripe/stripe-go/sigma/scheduledqueryrun
-github.com/stripe/stripe-go/sku
-github.com/stripe/stripe-go/source
-github.com/stripe/stripe-go/sourcetransaction
-github.com/stripe/stripe-go/sub
-github.com/stripe/stripe-go/subitem
-github.com/stripe/stripe-go/subschedule
-github.com/stripe/stripe-go/taxid
-github.com/stripe/stripe-go/taxrate
-github.com/stripe/stripe-go/terminal/connectiontoken
-github.com/stripe/stripe-go/terminal/location
-github.com/stripe/stripe-go/terminal/reader
-github.com/stripe/stripe-go/threedsecure
-github.com/stripe/stripe-go/token
-github.com/stripe/stripe-go/topup
-github.com/stripe/stripe-go/transfer
-github.com/stripe/stripe-go/usagerecord
-github.com/stripe/stripe-go/usagerecordsummary
-github.com/stripe/stripe-go/webhookendpoint
+# github.com/onsi/gomega v1.10.5
+## explicit
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/stretchr/testify v1.7.0
+## explicit
 # go.opencensus.io v0.23.0
 go.opencensus.io
 go.opencensus.io/internal
@@ -185,24 +91,12 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
-# go.opentelemetry.io/otel v0.18.0
-go.opentelemetry.io/otel
-go.opentelemetry.io/otel/attribute
-go.opentelemetry.io/otel/codes
-go.opentelemetry.io/otel/internal
-go.opentelemetry.io/otel/internal/baggage
-go.opentelemetry.io/otel/internal/global
-go.opentelemetry.io/otel/internal/trace/noop
-go.opentelemetry.io/otel/propagation
-go.opentelemetry.io/otel/unit
-# go.opentelemetry.io/otel/metric v0.18.0
-go.opentelemetry.io/otel/metric
-go.opentelemetry.io/otel/metric/global
-go.opentelemetry.io/otel/metric/number
-go.opentelemetry.io/otel/metric/registry
-# go.opentelemetry.io/otel/trace v0.18.0
-go.opentelemetry.io/otel/trace
+# go.uber.org/multierr v1.5.0
+## explicit
+# go.uber.org/zap v1.14.0
+## explicit
 # golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+## explicit
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 golang.org/x/lint
@@ -388,6 +282,8 @@ google.golang.org/protobuf/types/known/structpb
 google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/wrapperspb
 google.golang.org/protobuf/types/pluginpb
+# gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
+## explicit
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.3.0
@@ -430,6 +326,8 @@ k8s.io/api/settings/v1alpha1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
+# k8s.io/apiextensions-apiserver v0.17.3
+## explicit
 # k8s.io/apimachinery v0.18.5
 ## explicit
 k8s.io/apimachinery/pkg/api/errors
@@ -490,13 +388,12 @@ k8s.io/client-go/util/keyutil
 ## explicit
 k8s.io/klog
 # k8s.io/utils v0.0.0-20200619165400-6e3d28b6ed19
+## explicit
 k8s.io/utils/integer
 # sigs.k8s.io/controller-runtime v0.5.0
 ## explicit
 sigs.k8s.io/controller-runtime/pkg/client
 sigs.k8s.io/controller-runtime/pkg/client/apiutil
-sigs.k8s.io/controller-runtime/pkg/runtime/scheme
-sigs.k8s.io/controller-runtime/pkg/scheme
 # sigs.k8s.io/structured-merge-diff/v3 v3.0.0
 sigs.k8s.io/structured-merge-diff/v3/value
 # sigs.k8s.io/yaml v1.2.0
