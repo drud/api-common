@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "manager.go",
+        "queue.go",
+        "serialize.go",
+        "transform.go",
+        "webhook.go",
+    ],
+    importpath = "github.com/drud/billing-api/pkg/server/state",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gen/live/billing/v1alpha1:go_default_library",
+        "//vendor/cloud.google.com/go/firestore:go_default_library",
+        "//vendor/cloud.google.com/go/firestore/apiv1:go_default_library",
+        "//vendor/github.com/bsm/redislock:go_default_library",
+        "//vendor/github.com/drud/admin-api/gen/live/administration/v1alpha1:go_default_library",
+        "//vendor/github.com/drud/org-operator/pkg/apis/orgs/v1beta1:go_default_library",
+        "//vendor/github.com/go-redis/redis/v8:go_default_library",
+        "//vendor/github.com/gorilla/mux:go_default_library",
+        "//vendor/github.com/stripe/stripe-go:go_default_library",
+        "//vendor/github.com/stripe/stripe-go/client:go_default_library",
+        "//vendor/google.golang.org/api/iterator:go_default_library",
+        "//vendor/google.golang.org/api/option:go_default_library",
+        "//vendor/google.golang.org/api/transport/grpc:go_default_library",
+        "//vendor/google.golang.org/genproto/googleapis/firestore/v1:go_default_library",
+        "//vendor/google.golang.org/grpc:go_default_library",
+        "//vendor/google.golang.org/grpc/codes:go_default_library",
+        "//vendor/google.golang.org/grpc/metadata:go_default_library",
+        "//vendor/google.golang.org/grpc/status:go_default_library",
+        "//vendor/google.golang.org/protobuf/proto:go_default_library",
+        "//vendor/google.golang.org/protobuf/reflect/protoreflect:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/client-go/rest:go_default_library",
+        "//vendor/k8s.io/klog:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/client:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["transform_test.go"],
+    embed = [":go_default_library"],
+)
