@@ -107,17 +107,7 @@ func generic(obj interface{}) (map[string]interface{}, error) {
 	return genericMap, nil
 }
 
-func (s *Manager) init() {
-
-	stripeKey := os.Getenv("STRIPE_KEY")
-	stripeClient := &client.API{}
-	stripeConfig := &stripe.BackendConfig{
-		MaxNetworkRetries: 3,
-	}
-	stripeClient.Init(stripeKey, &stripe.Backends{
-		API:     stripe.GetBackendWithConfig(stripe.APIBackend, stripeConfig),
-		Uploads: stripe.GetBackendWithConfig(stripe.UploadsBackend, stripeConfig),
-	})
+func (s *Manager) Resync() {
 
 	custIDs := make(map[string]bool)
 	subIDs := make(map[string]bool)
@@ -127,7 +117,7 @@ func (s *Manager) init() {
 	// Run this initialization in a single transaction
 	err := s.firestore.RunTransaction(context.Background(), func(c context.Context, txn *firestore.Transaction) error {
 
-		subiter := stripeClient.Subscriptions.List(&stripe.SubscriptionListParams{})
+		subiter := s.stripe.Subscriptions.List(&stripe.SubscriptionListParams{})
 		for subiter.Next() {
 			item := subiter.Current()
 			if sub, ok := item.(*stripe.Subscription); ok {
@@ -141,7 +131,7 @@ func (s *Manager) init() {
 			}
 		}
 
-		custiter := stripeClient.Customers.List(&stripe.CustomerListParams{})
+		custiter := s.stripe.Customers.List(&stripe.CustomerListParams{})
 		for custiter.Next() {
 			item := custiter.Current()
 			if customer, ok := item.(*stripe.Customer); ok {
@@ -153,7 +143,7 @@ func (s *Manager) init() {
 			}
 		}
 
-		planiter := stripeClient.Plans.List(&stripe.PlanListParams{})
+		planiter := s.stripe.Plans.List(&stripe.PlanListParams{})
 		for planiter.Next() {
 			item := planiter.Current()
 			if plan, ok := item.(*stripe.Plan); ok {
@@ -165,7 +155,7 @@ func (s *Manager) init() {
 			}
 		}
 
-		productiter := stripeClient.Products.List(&stripe.ProductListParams{})
+		productiter := s.stripe.Products.List(&stripe.ProductListParams{})
 		for productiter.Next() {
 			item := productiter.Current()
 			if product, ok := item.(*stripe.Product); ok {
@@ -557,9 +547,6 @@ func NewManager(firestore *firestore.Client, stripe *client.API, config *restcli
 		locker:        locker,
 		firestoreGRPC: firestorepb.NewFirestoreClient(connPool),
 	}
-	//FIXME: We should serve and then list
-	// Removed to reduce firestore costs
-	// s.init()
 
 	return s
 }
