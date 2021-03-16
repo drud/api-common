@@ -1,120 +1,161 @@
-package context
+package interceptors
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	fbauth "firebase.google.com/go/auth"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	apictx "github.com/drud/api-common/context"
+	apierr "github.com/drud/api-common/errors"
 )
 
-const (
-	//AuthHeader the header we expect to contain our firebase bearer token
-	AuthHeader = "x-auth-token"
-	//WorkspaceHeader shall indicate the workspace for the request
-	WorkspaceHeader = "x-ddev-workspace"
-)
+/*
+This compilation unit sets state carried with over the lifetime of the context
+*/
 
-type ContextKeyWorkspace struct{}
-type ContextKeyNamespace struct{}
-type ContextKeySubscription struct{}
-type ContextKeyUser struct{}
-type ContextKeyToken struct{}
-type ContextKeyProcedure struct{}
+//TODO: This compilation unit can be shared among all API servers
+//TODO: Requests can be mutated by an upstream service by something such as an ambassador plugin
 
-func WorkspaceFromMeta(meta metadata.MD) (string, error) {
-	getElement := func(elem []string) (string, error) {
-		if len(elem) == 0 || elem[0] == "" {
-			return "", status.Errorf(codes.InvalidArgument, "no workspace details supplied")
+func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, crClient client.Client) (context.Context, error) {
+
+	md, ok := metadata.FromIncomingContext(parent)
+	if !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "retrieving metadata failed")
+	}
+
+	bearer, err := apictx.AuthTokenFromMeta(md)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "error retrieving authorization state: %v", err)
+	}
+
+	token, err := firebaseClient.VerifyIDToken(context.Background(), bearer)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "error validiating token: %v", err.Error())
+	}
+	// Save state provided by the requests token
+	ctx := context.WithValue(parent, apictx.ContextKeyToken{}, token)
+	ctx = context.WithValue(ctx, apictx.ContextKeyUser{}, token.UID)
+
+	// Save the derived workspace for any downstream methods
+	ws, err := apictx.WorkspaceFromMeta(md)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
+	}
+	ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, ws)
+	wsSplit := strings.Split(ws, ".")
+	if len(wsSplit) > 1 {
+		subscription := wsSplit[0]
+		ctx = context.WithValue(ctx, apictx.ContextKeySubscription{}, subscription)
+		workspace := wsSplit[1]
+		ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, workspace)
+
+		selector := labels.NewSelector()
+		displayReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/displayname==%s", workspace))
+		if err != nil {
+			return nil, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
 		}
-		return strings.TrimSpace(elem[0]), nil
-	}
 
-	if elem, ok := meta[WorkspaceHeader]; ok {
-		return getElement(elem)
-	}
+		subscriptionReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/subscription==%s", subscription))
+		if err != nil {
+			return nil, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
+		}
+		selector = selector.Add(displayReqs...)
+		selector = selector.Add(subscriptionReqs...)
 
-	return "", status.Errorf(codes.InvalidArgument, "no workspace details supplied")
+		var namespaceList v1.NamespaceList
+		if err := crClient.List(ctx, &namespaceList, &client.ListOptions{
+			LabelSelector: selector,
+		}); err != nil {
+			return nil, apierr.AbstractError(ctx, codes.Internal, "an internal error occured retrieving workspaces", err)
+		}
+		if len(namespaceList.Items) > 1 {
+			return nil, status.Errorf(codes.NotFound, "ambiguous workspace for request")
+		}
+		if len(namespaceList.Items) == 0 {
+			return nil, status.Errorf(codes.NotFound, "no valid workspace found for request")
+		}
+		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, namespaceList.Items[0].Name)
+	} else {
+		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, ws)
+	}
+	return ctx, nil
 }
 
-func AuthTokenFromMeta(meta metadata.MD) (string, error) {
-	getElement := func(elem []string) (string, error) {
-		if len(elem) == 0 {
-			return "", status.Errorf(codes.InvalidArgument, "no auth details supplied")
-		}
-		return strings.TrimSpace(elem[0]), nil
-	}
-
-	if elem, ok := meta[AuthHeader]; ok {
-		return getElement(elem)
-	}
-	// Deprecate
-	if authorization, ok := meta["authorization"]; ok {
-		return getElement(authorization)
-	}
-
-	return "", status.Errorf(codes.InvalidArgument, "no auth details supplied")
+type StreamContextWrapper interface {
+	grpc.ServerStream
+	SetContext(context.Context)
 }
 
-func NamespaceFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyNamespace{})
-	if iface != nil {
-		if ws, ok := iface.(string); ok {
-			return ws, nil
-		}
-	}
-	// message for the user
-	return "", status.Error(codes.NotFound, "unable to determine workspace for request")
+type wrapper struct {
+	grpc.ServerStream
+	ctx context.Context
 }
 
-func WorkspaceFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyWorkspace{})
-	if iface != nil {
-		if ws, ok := iface.(string); ok {
-			return ws, nil
-		}
-	}
-	return "", status.Error(codes.NotFound, "unable to determine workspace for request")
+func (w *wrapper) Context() context.Context {
+	return w.ctx
 }
 
-func SubscriptionFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeySubscription{})
-	if iface != nil {
-		if sub, ok := iface.(string); ok {
-			return sub, nil
-		}
-	}
-	return "", status.Error(codes.NotFound, "unable to determine subscription for request")
+func (w *wrapper) SetContext(ctx context.Context) {
+	w.ctx = ctx
 }
 
-func UserFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyUser{})
-	if iface != nil {
-		if user, ok := iface.(string); ok {
-			return user, nil
-		}
+func newStreamContextWrapper(inner grpc.ServerStream) StreamContextWrapper {
+	ctx := inner.Context()
+	return &wrapper{
+		inner,
+		ctx,
 	}
-	return "", status.Error(codes.NotFound, "unable to determine user for request")
 }
 
-func ProcedureFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyProcedure{})
-	if iface != nil {
-		if procedure, ok := iface.(string); ok {
-			return procedure, nil
-		}
-	}
-	return "", status.Error(codes.NotFound, "unable to determine procedure for request")
+type StateInterceptors interface {
+	StreamingServerInterceptor() grpc.StreamServerInterceptor
+	UnaryServerInterceptor() grpc.UnaryServerInterceptor
 }
 
-func AuthTokenFromContext(ctx context.Context) (*fbauth.Token, error) {
-	iface := ctx.Value(ContextKeyToken{})
-	if iface != nil {
-		if token, ok := iface.(*fbauth.Token); ok {
-			return token, nil
-		}
+type interceptor struct {
+	firebaseClient *fbauth.Client
+	crClient       client.Client
+}
+
+func NewStateInterceptor(firebaseClient *fbauth.Client, crClient client.Client) StateInterceptors {
+	return &interceptor{
+		firebaseClient: firebaseClient,
+		crClient:       crClient,
 	}
-	return nil, status.Error(codes.NotFound, "unable to determine token for request")
+}
+
+func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// Save the procedure as state for logging/analytics
+		ctx = context.WithValue(ctx, apictx.ContextKeyProcedure{}, info.FullMethod)
+		ctx, err := getStatefulContext(ctx, i.firebaseClient, i.crClient)
+		if err != nil {
+			return nil, err
+		}
+		return handler(ctx, req)
+	}
+}
+
+func (i *interceptor) StreamingServerInterceptor() grpc.StreamServerInterceptor {
+
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		w := newStreamContextWrapper(ss)
+		ctx := context.WithValue(w.Context(), apictx.ContextKeyProcedure{}, info.FullMethod)
+		ctx, err := getStatefulContext(ctx, i.firebaseClient, i.crClient)
+		if err != nil {
+			return err
+		}
+		w.SetContext(ctx)
+		return handler(srv, w)
+	}
 }

@@ -15,15 +15,14 @@ const (
 	AuthHeader = "x-auth-token"
 	//WorkspaceHeader shall indicate the workspace for the request
 	WorkspaceHeader = "x-ddev-workspace"
-
-	// Request Context Values
-	ContextKeyWorkspace    = "ddev-workspace"
-	ContextKeyNamespace    = "ddev-namespace"
-	ContextKeySubscription = "ddev-subscription"
-	ContextKeyUser         = "ddev-user"
-	ContextKeyToken        = "ddev-token"
-	ContextKeyProcedure    = "ddev-procedure"
 )
+
+type ContextKeyWorkspace struct{}
+type ContextKeyNamespace struct{}
+type ContextKeySubscription struct{}
+type ContextKeyUser struct{}
+type ContextKeyToken struct{}
+type ContextKeyProcedure struct{}
 
 func WorkspaceFromMeta(meta metadata.MD) (string, error) {
 	getElement := func(elem []string) (string, error) {
@@ -60,7 +59,7 @@ func AuthTokenFromMeta(meta metadata.MD) (string, error) {
 }
 
 func NamespaceFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyNamespace)
+	iface := ctx.Value(ContextKeyNamespace{})
 	if iface != nil {
 		if ws, ok := iface.(string); ok {
 			return ws, nil
@@ -71,7 +70,7 @@ func NamespaceFromContext(ctx context.Context) (string, error) {
 }
 
 func WorkspaceFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyWorkspace)
+	iface := ctx.Value(ContextKeyWorkspace{})
 	if iface != nil {
 		if ws, ok := iface.(string); ok {
 			return ws, nil
@@ -81,7 +80,7 @@ func WorkspaceFromContext(ctx context.Context) (string, error) {
 }
 
 func SubscriptionFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeySubscription)
+	iface := ctx.Value(ContextKeySubscription{})
 	if iface != nil {
 		if sub, ok := iface.(string); ok {
 			return sub, nil
@@ -91,7 +90,7 @@ func SubscriptionFromContext(ctx context.Context) (string, error) {
 }
 
 func UserFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyUser)
+	iface := ctx.Value(ContextKeyUser{})
 	if iface != nil {
 		if user, ok := iface.(string); ok {
 			return user, nil
@@ -101,7 +100,7 @@ func UserFromContext(ctx context.Context) (string, error) {
 }
 
 func ProcedureFromContext(ctx context.Context) (string, error) {
-	iface := ctx.Value(ContextKeyProcedure)
+	iface := ctx.Value(ContextKeyProcedure{})
 	if iface != nil {
 		if procedure, ok := iface.(string); ok {
 			return procedure, nil
@@ -111,7 +110,7 @@ func ProcedureFromContext(ctx context.Context) (string, error) {
 }
 
 func AuthTokenFromContext(ctx context.Context) (*fbauth.Token, error) {
-	iface := ctx.Value(ContextKeyToken)
+	iface := ctx.Value(ContextKeyToken{})
 	if iface != nil {
 		if token, ok := iface.(*fbauth.Token); ok {
 			return token, nil
