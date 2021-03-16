@@ -54,7 +54,6 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 		return nil, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
 	}
 	ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, ws)
-	printMetadata("5", ctx)
 	wsSplit := strings.Split(ws, ".")
 	if len(wsSplit) > 1 {
 		subscription := wsSplit[0]
@@ -88,10 +87,8 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 			return nil, status.Errorf(codes.NotFound, "no valid workspace found for request")
 		}
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, namespaceList.Items[0].Name)
-		printMetadata("6", ctx)
 	} else {
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, ws)
-		printMetadata("7", ctx)
 	}
 	return ctx, nil
 }
@@ -143,13 +140,9 @@ func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Save the procedure as state for logging/analytics
-		printMetadata("1", ctx)
 		ctx = context.WithValue(ctx, apictx.ContextKeyProcedure{}, info.FullMethod)
-		printMetadata("2", ctx)
-		ctx, err := getStatefulContext(ctx, i.firebaseClient, i.crClient)
-		if err != nil {
-			return nil, err
-		}
+		// Interceptor designed to extract and set state, however not error
+		ctx, _ = getStatefulContext(ctx, i.firebaseClient, i.crClient)
 		return handler(ctx, req)
 	}
 }
@@ -159,10 +152,8 @@ func (i *interceptor) StreamingServerInterceptor() grpc.StreamServerInterceptor 
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		w := newStreamContextWrapper(ss)
 		ctx := context.WithValue(w.Context(), apictx.ContextKeyProcedure{}, info.FullMethod)
-		ctx, err := getStatefulContext(ctx, i.firebaseClient, i.crClient)
-		if err != nil {
-			return err
-		}
+		// Interceptor designed to extract and set state, however not error
+		ctx, _ = getStatefulContext(ctx, i.firebaseClient, i.crClient)
 		w.SetContext(ctx)
 		return handler(srv, w)
 	}
