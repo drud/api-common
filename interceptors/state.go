@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	fbauth "firebase.google.com/go/auth"
@@ -43,7 +44,9 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 	}
 	// Save state provided by the requests token
 	ctx := context.WithValue(parent, apictx.ContextKeyToken{}, token)
+	printMetadata("3", ctx)
 	ctx = context.WithValue(ctx, apictx.ContextKeyUser{}, token.UID)
+	printMetadata("4", ctx)
 
 	// Save the derived workspace for any downstream methods
 	ws, err := apictx.WorkspaceFromMeta(md)
@@ -51,6 +54,7 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 		return nil, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
 	}
 	ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, ws)
+	printMetadata("5", ctx)
 	wsSplit := strings.Split(ws, ".")
 	if len(wsSplit) > 1 {
 		subscription := wsSplit[0]
@@ -84,8 +88,10 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 			return nil, status.Errorf(codes.NotFound, "no valid workspace found for request")
 		}
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, namespaceList.Items[0].Name)
+		printMetadata("6", ctx)
 	} else {
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, ws)
+		printMetadata("7", ctx)
 	}
 	return ctx, nil
 }
@@ -137,7 +143,9 @@ func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Save the procedure as state for logging/analytics
+		printMetadata("1", ctx)
 		ctx = context.WithValue(ctx, apictx.ContextKeyProcedure{}, info.FullMethod)
+		printMetadata("2", ctx)
 		ctx, err := getStatefulContext(ctx, i.firebaseClient, i.crClient)
 		if err != nil {
 			return nil, err
@@ -158,4 +166,33 @@ func (i *interceptor) StreamingServerInterceptor() grpc.StreamServerInterceptor 
 		w.SetContext(ctx)
 		return handler(srv, w)
 	}
+}
+
+func printMetadata(id string, ctx context.Context) {
+	fmt.Fprintf(os.Stdout, "%s:\n", id)
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		for k, v := range md {
+			fmt.Fprintf(os.Stdout, "\t%s: %v\n", k, v)
+		}
+	}
+	fmt.Fprintf(os.Stdout, "values:\n")
+	if iface := ctx.Value(apictx.ContextKeyNamespace{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextValueNamespace: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeyProcedure{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeyProcedure: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeySubscription{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeySubscription: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeyToken{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeyToken: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeyUser{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeyUser: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeyWorkspace{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeyWorkspace: %v\n", iface)
+	}
+	fmt.Fprintf(os.Stdout, "\n")
 }
