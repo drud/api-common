@@ -44,9 +44,7 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 	}
 	// Save state provided by the requests token
 	ctx := context.WithValue(parent, apictx.ContextKeyToken{}, token)
-	printMetadata("3", ctx)
 	ctx = context.WithValue(ctx, apictx.ContextKeyUser{}, token.UID)
-	printMetadata("4", ctx)
 
 	// Save the derived workspace for any downstream methods
 	ws, err := apictx.WorkspaceFromMeta(md)
