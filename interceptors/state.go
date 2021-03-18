@@ -19,37 +19,27 @@ import (
 	apierr "github.com/drud/api-common/errors"
 )
 
-/*
-This compilation unit sets state carried with over the lifetime of the context
-*/
-
-//TODO: This compilation unit can be shared among all API servers
-//TODO: Requests can be mutated by an upstream service by something such as an ambassador plugin
-
-func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, crClient client.Client) (context.Context, error) {
-
-	md, ok := metadata.FromIncomingContext(parent)
-	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "retrieving metadata failed")
-	}
-
+func setBearerContext(ctx context.Context, md metadata.MD, firebaseClient *fbauth.Client) (context.Context, error) {
 	bearer, err := apictx.AuthTokenFromMeta(md)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "error retrieving authorization state: %v", err)
+		return ctx, status.Errorf(codes.Unauthenticated, "error retrieving authorization state: %v", err)
 	}
 
 	token, err := firebaseClient.VerifyIDToken(context.Background(), bearer)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "error validiating token: %v", err.Error())
+		return ctx, status.Errorf(codes.Unauthenticated, "error validiating token: %v", err.Error())
 	}
 	// Save state provided by the requests token
-	ctx := context.WithValue(parent, apictx.ContextKeyToken{}, token)
+	ctx = context.WithValue(ctx, apictx.ContextKeyToken{}, token)
 	ctx = context.WithValue(ctx, apictx.ContextKeyUser{}, token.UID)
+	return ctx, nil
+}
 
-	// Save the derived workspace for any downstream methods
+func setWorkspaceContext(ctx context.Context, md metadata.MD, crClient client.Client) (context.Context, error) {
+
 	ws, err := apictx.WorkspaceFromMeta(md)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
+		return ctx, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
 	}
 	ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, ws)
 	wsSplit := strings.Split(ws, ".")
@@ -62,12 +52,12 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 		selector := labels.NewSelector()
 		displayReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/displayname==%s", workspace))
 		if err != nil {
-			return nil, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
+			return ctx, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
 		}
 
 		subscriptionReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/subscription==%s", subscription))
 		if err != nil {
-			return nil, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
+			return ctx, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
 		}
 		selector = selector.Add(displayReqs...)
 		selector = selector.Add(subscriptionReqs...)
@@ -76,18 +66,38 @@ func getStatefulContext(parent context.Context, firebaseClient *fbauth.Client, c
 		if err := crClient.List(ctx, &namespaceList, &client.ListOptions{
 			LabelSelector: selector,
 		}); err != nil {
-			return nil, apierr.AbstractError(ctx, codes.Internal, "an internal error occured retrieving workspaces", err)
+			return ctx, apierr.AbstractError(ctx, codes.Internal, "an internal error occured retrieving workspaces", err)
 		}
 		if len(namespaceList.Items) > 1 {
-			return nil, status.Errorf(codes.NotFound, "ambiguous workspace for request")
+			return ctx, status.Errorf(codes.NotFound, "ambiguous workspace for request")
 		}
 		if len(namespaceList.Items) == 0 {
-			return nil, status.Errorf(codes.NotFound, "no valid workspace found for request")
+			return ctx, status.Errorf(codes.NotFound, "no valid workspace found for request")
 		}
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, namespaceList.Items[0].Name)
 	} else {
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, ws)
 	}
+	return ctx, nil
+}
+
+/*
+This compilation unit sets state carried with over the lifetime of the context
+*/
+
+//TODO: This compilation unit can be shared among all API servers
+//TODO: Requests can be mutated by an upstream service by something such as an ambassador plugin
+
+func getStatefulContext(ctx context.Context, firebaseClient *fbauth.Client, crClient client.Client) (context.Context, error) {
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ctx, status.Errorf(codes.InvalidArgument, "retrieving metadata failed")
+	}
+	ctx, _ = setBearerContext(ctx, md, firebaseClient)
+	ctx, _ = setWorkspaceContext(ctx, md, crClient)
+
+	// Save the derived workspace for any downstream methods
 	return ctx, nil
 }
 
