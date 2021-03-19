@@ -8,13 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-)
 
-const (
-	//AuthHeader the header we expect to contain our firebase bearer token
-	AuthHeader = "x-auth-token"
-	//WorkspaceHeader shall indicate the workspace for the request
-	WorkspaceHeader = "x-ddev-workspace"
+	apimeta "github.com/drud/api-common/metadata"
 )
 
 type ContextKeyWorkspace struct{}
@@ -32,7 +27,7 @@ func WorkspaceFromMeta(meta metadata.MD) (string, error) {
 		return strings.TrimSpace(elem[0]), nil
 	}
 
-	if elem, ok := meta[WorkspaceHeader]; ok {
+	if elem, ok := meta[apimeta.HeaderWorkspace]; ok {
 		return getElement(elem)
 	}
 
@@ -47,7 +42,7 @@ func AuthTokenFromMeta(meta metadata.MD) (string, error) {
 		return strings.TrimSpace(elem[0]), nil
 	}
 
-	if elem, ok := meta[AuthHeader]; ok {
+	if elem, ok := meta[apimeta.HeaderAuthToken]; ok {
 		return getElement(elem)
 	}
 	// Deprecate
