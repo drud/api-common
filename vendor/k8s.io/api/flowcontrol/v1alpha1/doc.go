@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package value defines types for an in-memory representation of yaml or json
-// objects, organized for convenient comparison with a schema (as defined by
-// the sibling schema package). Functions for reading and writing the objects
-// are also provided.
-package value
+// +k8s:deepcopy-gen=package
+// +k8s:protobuf-gen=package
+// +k8s:openapi-gen=true
+
+// +groupName=flowcontrol.apiserver.k8s.io
+
+// Package v1alpha1 holds api types of version v1alpha1 for group "flowcontrol.apiserver.k8s.io".
+package v1alpha1 // import "k8s.io/api/flowcontrol/v1alpha1"
