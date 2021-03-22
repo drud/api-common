@@ -13,11 +13,22 @@ import (
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apictx "github.com/drud/api-common/context"
 	apierr "github.com/drud/api-common/errors"
 )
+
+var (
+	debug bool
+)
+
+func init() {
+	if os.Getenv("API_COMMON_DEBUG") == "true" {
+		debug = true
+	}
+}
 
 func setBearerContext(ctx context.Context, md metadata.MD, firebaseClient *fbauth.Client) (context.Context, error) {
 	bearer, err := apictx.AuthTokenFromMeta(md)
@@ -94,8 +105,16 @@ func getStatefulContext(ctx context.Context, firebaseClient *fbauth.Client, crCl
 	if !ok {
 		return ctx, status.Errorf(codes.InvalidArgument, "retrieving metadata failed")
 	}
-	ctx, _ = setBearerContext(ctx, md, firebaseClient)
-	ctx, _ = setWorkspaceContext(ctx, md, crClient)
+	bearerCtx, err := setBearerContext(ctx, md, firebaseClient)
+	if debug && err != nil {
+		klog.Infof("setBearerContext error: %v", err)
+	}
+	ctx = bearerCtx
+	workspaceCtx, err := setWorkspaceContext(ctx, md, crClient)
+	if debug && err != nil {
+		klog.Infof("setBearerContext error: %v", err)
+	}
+	ctx = workspaceCtx
 
 	// Save the derived workspace for any downstream methods
 	return ctx, nil
