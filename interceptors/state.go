@@ -18,6 +18,7 @@ import (
 
 	apictx "github.com/drud/api-common/context"
 	apierr "github.com/drud/api-common/errors"
+	apimeta "github.com/drud/api-common/metadata"
 )
 
 var (
@@ -50,7 +51,17 @@ func setWorkspaceContext(ctx context.Context, md metadata.MD, crClient client.Cl
 
 	ws, err := apictx.WorkspaceFromMeta(md)
 	if err != nil {
-		return ctx, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
+		if token, err := apictx.AuthTokenFromContext(ctx); err == nil {
+			iface, ok := token.Claims[apimeta.ClaimKeyDefaultWorkspace]
+			if !ok {
+				return ctx, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
+			}
+			if defaultWS, ok := iface.(string); ok {
+				ws = defaultWS
+			}
+		} else {
+			return ctx, status.Errorf(codes.Internal, "unable to determine workspace for request: %v", err)
+		}
 	}
 	ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, ws)
 	wsSplit := strings.Split(ws, ".")

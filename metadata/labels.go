@@ -8,6 +8,8 @@ const (
 	// Indiciates the workspace the resource belongs to
 	LabelKeyWorkspace = "ddev.live/workspace"
 
+	ClaimKeyDefaultWorkspace = "default_workspace"
+
 	// Indicates the firebase token for the request
 	HeaderAuthToken = "x-auth-token"
 	// Indicates the workspace scope for the request
