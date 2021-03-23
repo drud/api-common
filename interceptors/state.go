@@ -77,7 +77,7 @@ func setWorkspaceContext(ctx context.Context, md metadata.MD, crClient client.Cl
 			return ctx, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
 		}
 
-		subscriptionReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/subscription==%s", subscription))
+		subscriptionReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/subscriptionstub==%s", subscription))
 		if err != nil {
 			return ctx, apierr.AbstractError(ctx, codes.Internal, "unable to determine workspace for request", err)
 		}
