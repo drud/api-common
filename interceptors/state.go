@@ -101,20 +101,25 @@ This compilation unit sets state carried with over the lifetime of the context
 
 func getStatefulContext(ctx context.Context, firebaseClient *fbauth.Client, crClient client.Client) (context.Context, error) {
 
+	var err error
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ctx, status.Errorf(codes.InvalidArgument, "retrieving metadata failed")
 	}
-	bearerCtx, err := setBearerContext(ctx, md, firebaseClient)
+	if debug {
+		klog.Infof("Metadata:")
+		for k, v := range md {
+			klog.Infof("%s: %s", k, v)
+		}
+	}
+	ctx, err = setBearerContext(ctx, md, firebaseClient)
 	if debug && err != nil {
 		klog.Infof("setBearerContext error: %v", err)
 	}
-	ctx = bearerCtx
-	workspaceCtx, err := setWorkspaceContext(ctx, md, crClient)
+	ctx, err = setWorkspaceContext(ctx, md, crClient)
 	if debug && err != nil {
 		klog.Infof("setBearerContext error: %v", err)
 	}
-	ctx = workspaceCtx
 
 	// Save the derived workspace for any downstream methods
 	return ctx, nil
@@ -167,6 +172,10 @@ func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Save the procedure as state for logging/analytics
+		if debug {
+			klog.Infof("Procedure Start: %s", info.FullMethod)
+			defer klog.Infof("Procedure End: %s", info.FullMethod)
+		}
 		ctx = context.WithValue(ctx, apictx.ContextKeyProcedure{}, info.FullMethod)
 		// Interceptor designed to extract and set state, however not error
 		ctx, _ = getStatefulContext(ctx, i.firebaseClient, i.crClient)
