@@ -17,6 +17,7 @@ type ContextKeyNamespace struct{}
 type ContextKeySubscription struct{}
 type ContextKeyUser struct{}
 type ContextKeyToken struct{}
+type ContextKeyUserRecord struct{}
 type ContextKeyProcedure struct{}
 
 func WorkspaceFromMeta(meta metadata.MD) (string, error) {
@@ -112,4 +113,14 @@ func AuthTokenFromContext(ctx context.Context) (*fbauth.Token, error) {
 		}
 	}
 	return nil, status.Error(codes.NotFound, "unable to determine token for request")
+}
+
+func UserRecordFromContext(ctx context.Context) (*fbauth.UserRecord, error) {
+	iface := ctx.Value(ContextKeyUserRecord{})
+	if iface != nil {
+		if record, ok := iface.(*fbauth.UserRecord); ok {
+			return record, nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "unable to determine user for request")
 }

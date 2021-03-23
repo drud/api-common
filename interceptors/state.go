@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	fbauth "firebase.google.com/go/auth"
+	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -39,11 +40,17 @@ func setBearerContext(ctx context.Context, md metadata.MD, firebaseClient *fbaut
 
 	token, err := firebaseClient.VerifyIDToken(context.Background(), bearer)
 	if err != nil {
-		return ctx, status.Errorf(codes.Unauthenticated, "error validiating token: %v", err.Error())
+		return ctx, status.Errorf(codes.Unauthenticated, "error validiating token: %v", err)
 	}
 	// Save state provided by the requests token
 	ctx = context.WithValue(ctx, apictx.ContextKeyToken{}, token)
 	ctx = context.WithValue(ctx, apictx.ContextKeyUser{}, token.UID)
+	// if we can store the most up to date record for the user in this token
+	record, err := firebaseClient.GetUser(ctx, token.UID)
+	if err != nil {
+		return ctx, status.Errorf(codes.Code(code.Code_UNAUTHENTICATED), "error retreiving user record: %v", err)
+	}
+	ctx = context.WithValue(ctx, apictx.ContextKeyUserRecord{}, record)
 	return ctx, nil
 }
 
