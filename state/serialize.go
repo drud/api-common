@@ -123,7 +123,10 @@ func removeSerializedNamed(c firestore.Client, txn *firestore.Transaction, colle
 	return nil
 }
 
-func Serialize(txn *firestore.Transaction, collection CollectionName, state protoreflect.ProtoMessage) error {
+/*
+Serialize returns the full path of the stored document or an error
+*/
+func Serialize(txn *firestore.Transaction, collection CollectionName, state protoreflect.ProtoMessage) (string, error) {
 
 	if identifiable, ok := state.(ProtoIdentifiable); ok {
 		return serializeID(txn, string(collection), identifiable)
@@ -131,14 +134,14 @@ func Serialize(txn *firestore.Transaction, collection CollectionName, state prot
 	if named, ok := state.(ProtoNamed); ok {
 		return serializeNamed(txn, string(collection), named)
 	}
-	return fmt.Errorf("serialize must contain proto with Name or ID fields")
+	return "", fmt.Errorf("serialize must contain proto with Name or ID fields")
 }
 
-func serializeID(txn *firestore.Transaction, collection string, state ProtoIdentifiable) error {
+func serializeID(txn *firestore.Transaction, collection string, state ProtoIdentifiable) (string, error) {
 
 	raw, err := proto.Marshal(state)
 	if err != nil {
-		return err
+		return "", err
 	}
 	RawObj := &RawWrapper{
 		Proto: state,
@@ -160,16 +163,16 @@ func serializeID(txn *firestore.Transaction, collection string, state ProtoIdent
 		Path: fmt.Sprintf("%s/documents/%s/%s", GetDatabasePath(), collection, state.GetId()),
 	}
 	if err := txn.Set(ref, RawObj); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return ref.Path, nil
 }
 
-func serializeNamed(txn *firestore.Transaction, collection string, state ProtoNamed) error {
+func serializeNamed(txn *firestore.Transaction, collection string, state ProtoNamed) (string, error) {
 
 	raw, err := proto.Marshal(state)
 	if err != nil {
-		return err
+		return "", err
 	}
 	RawObj := &RawWrapper{
 		Proto: state,
@@ -191,9 +194,9 @@ func serializeNamed(txn *firestore.Transaction, collection string, state ProtoNa
 		Path: fmt.Sprintf("%s/documents/%s/%s", GetDatabasePath(), collection, docName),
 	}
 	if err := txn.Set(ref, RawObj); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return ref.Path, nil
 }
 
 func Deserialize(doc *firestorepb.Document, msg protoreflect.ProtoMessage) error {
