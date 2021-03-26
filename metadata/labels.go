@@ -1,6 +1,7 @@
 package metadata
 
 const (
+	LabelKeySubscriptionStub = "ddev.live/subscriptionstub"
 	// Indicates the subscription ID the resource belongs to
 	LabelKeySubscription = "ddev.live/subscription"
 	// Indicates the customer the resource belongs to
