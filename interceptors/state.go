@@ -77,6 +77,7 @@ func setWorkspaceContext(ctx context.Context, md metadata.MD, crClient client.Cl
 		ctx = context.WithValue(ctx, apictx.ContextKeySubscription{}, subscription)
 		workspace := wsSplit[1]
 		ctx = context.WithValue(ctx, apictx.ContextKeyWorkspace{}, workspace)
+		ctx = context.WithValue(ctx, apictx.ContextKeyQualifiedWorkspace{}, ws)
 
 		selector := labels.NewSelector()
 		displayReqs, err := labels.ParseToRequirements(fmt.Sprintf("ddev.live/displayname==%s", workspace))
@@ -238,6 +239,9 @@ func printMetadata(id string, ctx context.Context) {
 	}
 	if iface := ctx.Value(apictx.ContextKeyWorkspace{}); iface != nil {
 		fmt.Fprintf(os.Stdout, "\tContextKeyWorkspace: %v\n", iface)
+	}
+	if iface := ctx.Value(apictx.ContextKeyQualifiedWorkspace{}); iface != nil {
+		fmt.Fprintf(os.Stdout, "\tContextKeyQualifiedWorkspace: %v\n", iface)
 	}
 	fmt.Fprintf(os.Stdout, "\n")
 }

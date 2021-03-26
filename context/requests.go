@@ -13,6 +13,7 @@ import (
 )
 
 type ContextKeyWorkspace struct{}
+type ContextKeyQualifiedWorkspace struct{}
 type ContextKeyNamespace struct{}
 type ContextKeySubscription struct{}
 type ContextKeyUser struct{}
@@ -67,6 +68,16 @@ func NamespaceFromContext(ctx context.Context) (string, error) {
 
 func WorkspaceFromContext(ctx context.Context) (string, error) {
 	iface := ctx.Value(ContextKeyWorkspace{})
+	if iface != nil {
+		if ws, ok := iface.(string); ok {
+			return ws, nil
+		}
+	}
+	return "", status.Error(codes.NotFound, "unable to determine workspace for request")
+}
+
+func QualifiedWorkspaceFromContext(ctx context.Context) (string, error) {
+	iface := ctx.Value(ContextKeyQualifiedWorkspace{})
 	if iface != nil {
 		if ws, ok := iface.(string); ok {
 			return ws, nil
