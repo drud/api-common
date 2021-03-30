@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	corev1 "k8s.io/api/core/v1"
 
 	apimeta "github.com/drud/api-common/metadata"
 )
@@ -56,15 +55,15 @@ func AuthTokenFromMeta(meta metadata.MD) (string, error) {
 	return "", status.Errorf(codes.InvalidArgument, "no auth details supplied")
 }
 
-func NamespaceFromContext(ctx context.Context) (*corev1.Namespace, error) {
+func NamespaceFromContext(ctx context.Context) (string, error) {
 	iface := ctx.Value(ContextKeyNamespace{})
 	if iface != nil {
-		if ns, ok := iface.(*corev1.Namespace); ok {
-			return ns, nil
+		if ws, ok := iface.(string); ok {
+			return ws, nil
 		}
 	}
 	// message for the user
-	return nil, status.Error(codes.NotFound, "unable to determine workspace for request")
+	return "", status.Error(codes.NotFound, "unable to determine workspace for request")
 }
 
 func WorkspaceFromContext(ctx context.Context) (string, error) {

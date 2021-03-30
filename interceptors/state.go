@@ -104,7 +104,7 @@ func setWorkspaceContext(ctx context.Context, md metadata.MD, crClient client.Cl
 		if len(namespaceList.Items) == 0 {
 			return ctx, status.Errorf(codes.NotFound, "no valid workspace found for request")
 		}
-		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, &namespaceList.Items[0])
+		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, namespaceList.Items[0].Name)
 	} else {
 		ctx = context.WithValue(ctx, apictx.ContextKeyNamespace{}, ws)
 	}
